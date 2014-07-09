@@ -32,4 +32,7 @@ int flash_cmd_reboot(void);
 int flash_cmd_init(void);
 int flash_cmd_deinit(void);
 
+int flash_cmd_select_image(int);
+int flash_cmd_print_select_image_info(void);
+
 #endif /*_flash_interface_h_*/

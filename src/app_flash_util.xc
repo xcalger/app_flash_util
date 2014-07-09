@@ -9,6 +9,9 @@
 #include <platform.h>
 #include <flash.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <syscall.h>
+#include <print.h>
 #include "SpecMacros.h"
 #include "flash_interface.h"
 
@@ -86,7 +89,15 @@ int flash_cmd_disable_ports()
 
 int main() {
 
-    int rValue;
+    int rValue, i, bytesChecked;
+    int fd = 0;
+    char filename[32];
+    char c,dum;
+    int imageNum=0;
+    int numInput=0;
+    unsigned char *fl_buffer;
+    unsigned char *chk_buffer;
+    unsigned char file_byte[1];
 
 //    fl_BootImageInfo * restrict p_facImage, p_curImage;
 
@@ -113,9 +124,103 @@ int main() {
     rValue = fl_getFlashSize();
     printf(" Flash size = %d Bytes\n", rValue);
 
+    /* Report Page Size */
+    rValue = fl_getPageSize();
+    printf(" page size = %d\n", rValue);
+
     if(flashOpen())
     {
+        printf("No flash images were found\n");
         return (1);
     }
+    while (c != 'x')
+    {
+        printf("\nMenu:\n");
+        printf("(s)elect Image\n");
+        printf("(d)isplay selected image information\n");
+        printf("(e)rase selected image\n");
+        printf("(a)ll upgrade erase\n");
+        printf("(p)rogram next image from file\n");
+        printf("(v)alidate selected image from file\n");
+        printf("e(x)it\n");
+        printf("Current Image Selected = %d\n\n",imageNum);
+        printf("Command:\n");
+        scanf("%c%c",&c,&dum);
+
+        switch(c)
+        {
+            case 's':
+            case 'S':
+                printf("Number of Image to select (0 is factory):\n");
+                scanf("%d%c",&numInput,&dum);
+                printf("\n");
+                if(!flash_cmd_select_image(numInput))
+                {
+                    imageNum = numInput;
+                }
+                else
+                {
+                    printf("Invalid Entry\n");
+                }
+                break;
+            case 'd':
+            case 'D':
+                if(flash_cmd_print_select_image_info())
+                {
+                   printf("Invalid Entry\n");
+                }
+                break;
+            case 'v':
+            case 'V':
+                printf("Validate the selected image from file.\n");
+                printf("Enter filename:\n");
+                gets(filename);
+                fd = _open(filename, O_RDONLY, 0);
+
+                if (fd == -1) {
+                  printstrln("Error: _open failed");
+                }
+                else
+                {
+                    fl_buffer = malloc(fl_getPageSize());
+                    chk_buffer = malloc(fl_getPageSize());
+                    if((fl_buffer == NULL) || (chk_buffer == NULL))
+                    {
+                        printf("malloc failed\n");
+                    }
+                    else{
+                        bytesChecked=0;
+
+                        i=0;
+                        while(rValue==fl_getPageSize())
+                        {
+                            flash_cmd_read_page(fl_buffer);
+                            i=0;
+                            rValue=_read(fd, chk_buffer, fl_getPageSize());
+                            bytesChecked += rValue;
+                            while(i<rValue)
+                            {
+                                if(*(chk_buffer+i) != *(fl_buffer+i))
+                                {
+                                    printf("**Error Found %d != %d \n", *(chk_buffer+i), *(fl_buffer+i));
+                                    break;
+                                }
+                                i++;
+                            }
+                            printf("Checked %d Bytes\n",bytesChecked);
+                        }
+                        printf("Check Done\n");
+
+                    }
+                    free(fl_buffer);
+                    free(chk_buffer);
+                    _close(fd);
+                }
+                break;
+        } /* End of switch statement for menu */
+
+    }
+
+
     return (0);
 }

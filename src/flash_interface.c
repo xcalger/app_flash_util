@@ -5,13 +5,13 @@
 #include <string.h>
 #include <xclib.h>
 #include <stdio.h>
-#include <print.h>
+//#include <print.h>
 
 #ifndef FLASH_MAX_UPGRADE_SIZE
 #define FLASH_MAX_UPGRADE_SIZE 128 * 1024 // 128K default
 #endif
 
-#define FLASH_ERROR() do {} while(0)
+#define FLASH_ERROR() return (-1);
 
 static int flash_device_open = 0;
 static fl_BootImageInfo factory_image;
@@ -53,6 +53,7 @@ int flashOpen(){
             printf(" Image Version = %d\n",curImage.version);
             printf(" Factory Image Flag = %d\n",curImage.factory);
         }
+        flash_device_open = 1;
         return (0);
     }
     else
@@ -77,7 +78,8 @@ int flash_cmd_select_image(int imageNum)
         }
         else
         {
-            for(i=1;i<imageNum;i++)
+            curImage=factory_image;
+            for(i=1;i<=imageNum;i++)
                 fl_getNextBootImage(&curImage);
             select_image = curImage;
             image_selected = 1;
@@ -152,28 +154,32 @@ int flash_cmd_deinit(void)
 
 int flash_cmd_read_page(unsigned char *data)
 {
-    if (!upgrade_image_valid)
+    static int read_started = 0;
+
+    if (!image_selected)
     {
-        *(unsigned int *)data = 1;
-        return 4;
+        return (1);
     }
 
-    if (*(unsigned int *)data == 0)
+    if(!read_started)
     {
-        fl_startImageRead(&select_image);
+        if(fl_startImageRead(&select_image))
+        {
+            // Error
+            return (1);
+        }
+        else
+        {
+            read_started = 1;
+        }
     }
 
-    current_flash_subpage_index = 0;
-
-    if (fl_readImageRead(current_flash_page_data) == 0)
+    if(fl_readImagePage(data))
     {
-        *(unsigned int *)data = 0;
-     }
-    else
-    {
-        *(unsigned int *)data = 1;
+        return(1);
     }
-    return 4;
+
+    return (0);
 }
 
 int flash_cmd_read_page_data(unsigned char *data)
@@ -186,7 +192,7 @@ int flash_cmd_read_page_data(unsigned char *data)
     return 64;
 }
 
-static void begin_write()
+static int begin_write()
 {
     int result;
     // TODO this will take a long time. To minimise the amount of time spent
@@ -198,7 +204,13 @@ static void begin_write()
     } while (result > 0);
 
     if (result < 0)
+    {
         FLASH_ERROR();
+    }
+    else
+    {
+        return(0);
+    }
 }
 
 static int pages_written = 0;
@@ -291,38 +303,33 @@ int flash_cmd_erase_selected_image()
 
 int flash_cmd_erase_all(void)
 {
-    fl_BootImageInfo tmp_image = select_image;
+    fl_BootImageInfo tmp_image;
+    int i;
 
+    i = 0;
 
-    //Needs some work still
-    return (1);
-
-    if (upgrade_image_valid)
+    while(max_images > 1)
     {
-        if (fl_deleteImage(&select_image) != 0)
+        tmp_image = factory_image;
+        i=0;
+        while(i < max_images)
+        {
+            if (fl_getNextBootImage(&tmp_image) == 0)
+            {
+                i++;
+            }
+        }
+        if(fl_deleteImage(&tmp_image))
         {
             FLASH_ERROR();
         }
 
-        // Keep deleting all upgrade images
-        // TODO Perhaps using replace would be nicer...
-        while(1)
-        {
-            if (fl_getNextBootImage(&tmp_image) == 0)
-            {
-                if (fl_deleteImage(&tmp_image) != 0)
-                {
-                    FLASH_ERROR();
-                }
-            }
-            else
-            {
-                break;
-            }
-        }
-
-    upgrade_image_valid = 0;
+        max_images--;
     }
+
+    factory_image_valid = 0;
+    upgrade_image_valid = 0;
+
     return 0;
 }
 
