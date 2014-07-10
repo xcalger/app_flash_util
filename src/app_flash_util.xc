@@ -24,68 +24,12 @@ fl_SPIPorts pFlash = {
         XS1_CLKBLK_1
 };
 
-#define settw(a,b) {__asm__ __volatile__("settw res[%0], %1": : "r" (a) , "r" (b));}
-#define setc(a,b) {__asm__  __volatile__("setc res[%0], %1": : "r" (a) , "r" (b));}
-#define setclk(a,b) {__asm__ __volatile__("setclk res[%0], %1": : "r" (a) , "r" (b));}
-#define portin(a,b) {__asm__  __volatile__("in %0, res[%1]": "=r" (b) : "r" (a));}
-#define portout(a,b) {__asm__  __volatile__("out res[%0], %1": : "r" (a) , "r" (b));}
 
 
 fl_DeviceSpec flash_devices[] = {FL_DEVICE_WINBOND_W25X20};
 
 
-#if 0
-int flash_cmd_enable_ports()
-{
-    int result = 0;
-    setc(p_flash.spiMISO, XS1_SETC_INUSE_OFF);
-    setc(p_flash.spiCLK, XS1_SETC_INUSE_OFF);
-    setc(p_flash.spiMOSI, XS1_SETC_INUSE_OFF);
-    setc(p_flash.spiSS, XS1_SETC_INUSE_OFF);
-    setc(p_flash.spiClkblk, XS1_SETC_INUSE_OFF);
 
-
-    setc(p_flash.spiMISO, XS1_SETC_INUSE_ON);
-    setc(p_flash.spiCLK, XS1_SETC_INUSE_ON);
-    setc(p_flash.spiMOSI, XS1_SETC_INUSE_ON);
-    setc(p_flash.spiSS, XS1_SETC_INUSE_ON);
-    setc(p_flash.spiClkblk, XS1_SETC_INUSE_ON);
-    setc(p_flash.spiClkblk, XS1_SETC_INUSE_ON);
-
-    setclk(p_flash.spiMISO, XS1_CLKBLK_REF);
-    setclk(p_flash.spiCLK, XS1_CLKBLK_REF);
-    setclk(p_flash.spiMOSI, XS1_CLKBLK_REF);
-    setclk(p_flash.spiSS, XS1_CLKBLK_REF);
-
-    setc(p_flash.spiMISO, XS1_SETC_BUF_BUFFERS);
-    setc(p_flash.spiMOSI, XS1_SETC_BUF_BUFFERS);
-
-    settw(p_flash.spiMISO, 8);
-    settw(p_flash.spiMOSI, 8);
-
-    if (!result)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-
-int flash_cmd_disable_ports()
-{
-    fl_disconnect();
-
-    setc(p_flash.spiMISO, XS1_SETC_INUSE_OFF);
-    setc(p_flash.spiCLK, XS1_SETC_INUSE_OFF);
-    setc(p_flash.spiMOSI, XS1_SETC_INUSE_OFF);
-    setc(p_flash.spiSS, XS1_SETC_INUSE_OFF);
-
-    return 1;
-}
-#endif
 
 int main() {
 
@@ -97,17 +41,15 @@ int main() {
     int numInput=0;
     unsigned char *fl_buffer;
     unsigned char *chk_buffer;
-    unsigned char file_byte[1];
-
-//    fl_BootImageInfo * restrict p_facImage, p_curImage;
 
 
-//    p_facImage = &facImage;
+
+
+
 
     printf("Starting Application\n");
     /* Open a connection to the SPI flash */
 
-//    flash_cmd_enable_ports();
     rValue = fl_connectToDevice(pFlash, flash_devices, 1);
     if(rValue)
     {
@@ -135,6 +77,7 @@ int main() {
     }
     while (c != 'x')
     {
+        /* Generate the menu */
         printf("\nMenu:\n");
         printf("(s)elect Image\n");
         printf("(d)isplay selected image information\n");
@@ -144,7 +87,10 @@ int main() {
         printf("(v)alidate selected image from file\n");
         printf("e(x)it\n");
         printf("Current Image Selected = %d\n\n",imageNum);
+
         printf("Command:\n");
+
+        /* Look for command. Extra character is coming from console I believe, so take care of that. */
         scanf("%c%c",&c,&dum);
 
         switch(c)
@@ -182,6 +128,7 @@ int main() {
                 }
                 else
                 {
+                    /* File opened. Allocate page buffers for flash and file. */
                     fl_buffer = malloc(fl_getPageSize());
                     chk_buffer = malloc(fl_getPageSize());
                     if((fl_buffer == NULL) || (chk_buffer == NULL))
@@ -189,20 +136,22 @@ int main() {
                         printf("malloc failed\n");
                     }
                     else{
+                        /* buffers allocated. Begin reading flash a page at a time and check each byte */
                         bytesChecked=0;
                         flError=0;
                         i=0;
-                        /*init read */
+                        /*This inits the image read only by sending a 1 for init */
                         if(flash_cmd_read_page(fl_buffer,1))
                         {
                             printf("Error opening to read\n");
                         }
                         else
                         {
-
+                            /* Image can be read from flash */
                             bytesToCheck=flash_cmd_image_size();
                             rValue=fl_getPageSize();
 
+                            /* End if end of file or all bytes in image are checked */
                             while((rValue==fl_getPageSize()) && (bytesChecked < bytesToCheck))
                             {
 
@@ -216,31 +165,37 @@ int main() {
                                 {
                                     if(*(chk_buffer+i) != *(fl_buffer+i))
                                     {
+                                        /* Collect number of Errors */
                                         flError++;
                                     }
                                     i++;
                                     bytesChecked++;
-                                }
+                                } /* End of bytes checking per page */
                                 printf("Checked %d Bytes\n",bytesChecked);
 
                             }
                             printf("Check Done\n");
-                            printf("%d Errors Found\n",flError);
-                            if(bytesChecked<bytesToCheck)
-                                {
-                                    printf("The file is smaller than image.\n");
-                                }
+                            printf("** %d Errors Found\n",flError);
+                            if(bytesChecked < bytesToCheck)
+                            {
+                                printf("The file is smaller than image.\n");
+                            }
 
-                        }
-                    }
-                    free(fl_buffer);
-                    free(chk_buffer);
+                        } /* End of flash image opened for reading */
+                        free(fl_buffer);
+                        free(chk_buffer);
+                    } /* End of if buffers can be allocated */
+
                     _close(fd);
                 } /* End of if _open */
+                break; /* End of Validate case choice */
+
+            default:
                 break;
+
         } /* End of switch statement for menu */
 
-    }
+    } /* End of Menu loop. Exit by user command */
 
 
     return (0);

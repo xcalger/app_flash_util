@@ -5,7 +5,7 @@
 #include <string.h>
 #include <xclib.h>
 #include <stdio.h>
-//#include <print.h>
+
 
 #ifndef FLASH_MAX_UPGRADE_SIZE
 #define FLASH_MAX_UPGRADE_SIZE 128 * 1024 // 128K default
@@ -105,53 +105,7 @@ int flash_cmd_print_select_image_info()
     return(1);
 }
 
-
-//Need to see if the enable ports is necessary
-#if 0
-int flash_cmd_init(void)
-{
-    fl_BootImageInfo image;
-
-    if (!flash_device_open)
-    {
-        if (flash_cmd_enable_ports())
-            flash_device_open = 1;
-    }
-
-    if (!flash_device_open)
-        return 0;
-
-    // Disable flash protection
-    fl_setProtection(0);
-
-    if (fl_getFactoryImage(&image) != 0)
-    {
-        return 0;
-    }
-
-    factory_image = image;
-
-    if (fl_getNextBootImage(&image) == 0)
-    {
-        upgrade_image_valid = 1;
-        upgrade_image = image;
-    }
-
-     return 0;
-}
-
-
-int flash_cmd_deinit(void)
-{
-    if (!flash_device_open)
-        return 0;
-
-    flash_cmd_disable_ports();
-    flash_device_open = 0;
-    return 0;
-}
-#endif
-
+/* Return the size of the selected image */
 int flash_cmd_image_size()
 {
  if(!image_selected)
@@ -163,6 +117,16 @@ int flash_cmd_image_size()
      return(select_image.size);
  }
 }
+
+/* Reads a page of the selected flash image.
+ * Parameters:
+ *  *data: a ptr to a memory buffer to put the image data in.
+ *  init: If 1 only initialize strating read and return a 1 if a problem and a 0 if no problem. If 0 then return error and data in buffer
+ *
+ *  Returns:
+ *  1 - Error
+ *  0 - No Error
+ */
 
 int flash_cmd_read_page(unsigned char *data, int init)
 {
@@ -193,16 +157,51 @@ int flash_cmd_read_page(unsigned char *data, int init)
     return (0);
 }
 
-int flash_cmd_read_page_data(unsigned char *data)
+
+int flash_cmd_erase_selected_image()
 {
-    unsigned char *page_data_ptr = &current_flash_page_data[current_flash_subpage_index * 64];
-    memcpy(data, page_data_ptr, 64);
 
-    current_flash_subpage_index++;
-
-    return 64;
+    if(image_selected)
+    {
+        return(fl_deleteImage(&select_image));
+    }
+    return(1);
 }
 
+int flash_cmd_erase_all(void)
+{
+    fl_BootImageInfo tmp_image;
+    int i;
+
+    i = 0;
+
+    while(max_images > 1)
+    {
+        tmp_image = factory_image;
+        i=0;
+        while(i < max_images)
+        {
+            if (fl_getNextBootImage(&tmp_image) == 0)
+            {
+                i++;
+            }
+        }
+        if(fl_deleteImage(&tmp_image))
+        {
+            FLASH_ERROR();
+        }
+
+        max_images--;
+    }
+
+    factory_image_valid = 0;
+    upgrade_image_valid = 0;
+
+    return 0;
+}
+
+/* This section is completely TODO */
+#if 0
 static int begin_write()
 {
     int result;
@@ -301,46 +300,6 @@ int flash_cmd_write_page_data(unsigned char *data)
 
     return 0;
 }
+#endif
 
-int flash_cmd_erase_selected_image()
-{
-
-    if(image_selected)
-    {
-        return(fl_deleteImage(&select_image));
-    }
-    return(1);
-}
-
-int flash_cmd_erase_all(void)
-{
-    fl_BootImageInfo tmp_image;
-    int i;
-
-    i = 0;
-
-    while(max_images > 1)
-    {
-        tmp_image = factory_image;
-        i=0;
-        while(i < max_images)
-        {
-            if (fl_getNextBootImage(&tmp_image) == 0)
-            {
-                i++;
-            }
-        }
-        if(fl_deleteImage(&tmp_image))
-        {
-            FLASH_ERROR();
-        }
-
-        max_images--;
-    }
-
-    factory_image_valid = 0;
-    upgrade_image_valid = 0;
-
-    return 0;
-}
 

@@ -15,22 +15,19 @@ int flash_cmd_write_page(unsigned char []);
  * Once a page of data has been provided it is written to the device.
  */
 int flash_cmd_write_page_data(unsigned char []);
-/**
- * Read a page of data from the upgrade image.
- * If the first word of data is 0 the page is read from the start of the
- * upgrade image, otherwise the next page in the image will be read.
- * On return the first word of data is written with 1 if there is nothing to
- * read and 0 otherwise.
+/* Reads a page of the selected flash image.
+ * Parameters:
+ *  *data: a ptr to a memory buffer to put the image data in.
+ *  init: If 1 only initialize strating read and return a 1 if a problem and a 0 if no problem. If 0 then return error and data in buffer
+ *
+ *  Returns:
+ *  1 - Error
+ *  0 - No Error
  */
 int flash_cmd_read_page(unsigned char [], int);
-/**
- * Get data previously read by flash_cmd_read_page().
- */
-int flash_cmd_read_page_data(unsigned char []);
+
 int flash_cmd_erase_all(void);
 int flash_cmd_reboot(void);
-int flash_cmd_init(void);
-int flash_cmd_deinit(void);
 
 int flash_cmd_select_image(int);
 int flash_cmd_print_select_image_info(void);
