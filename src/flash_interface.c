@@ -152,16 +152,27 @@ int flash_cmd_deinit(void)
 }
 #endif
 
-int flash_cmd_read_page(unsigned char *data)
+int flash_cmd_image_size()
 {
-    static int read_started = 0;
+ if(!image_selected)
+ {
+     return (-1);
+ }
+ else
+ {
+     return(select_image.size);
+ }
+}
+
+int flash_cmd_read_page(unsigned char *data, int init)
+{
 
     if (!image_selected)
     {
         return (1);
     }
 
-    if(!read_started)
+    if(init)
     {
         if(fl_startImageRead(&select_image))
         {
@@ -170,7 +181,7 @@ int flash_cmd_read_page(unsigned char *data)
         }
         else
         {
-            read_started = 1;
+            return (0);
         }
     }
 

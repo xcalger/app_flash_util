@@ -89,7 +89,7 @@ int flash_cmd_disable_ports()
 
 int main() {
 
-    int rValue, i, bytesChecked;
+    int rValue, i, bytesChecked, bytesToCheck, flError;
     int fd = 0;
     char filename[32];
     char c,dum;
@@ -190,32 +190,53 @@ int main() {
                     }
                     else{
                         bytesChecked=0;
-
+                        flError=0;
                         i=0;
-                        while(rValue==fl_getPageSize())
+                        /*init read */
+                        if(flash_cmd_read_page(fl_buffer,1))
                         {
-                            flash_cmd_read_page(fl_buffer);
-                            i=0;
-                            rValue=_read(fd, chk_buffer, fl_getPageSize());
-                            bytesChecked += rValue;
-                            while(i<rValue)
-                            {
-                                if(*(chk_buffer+i) != *(fl_buffer+i))
-                                {
-                                    printf("**Error Found %d != %d \n", *(chk_buffer+i), *(fl_buffer+i));
-                                    break;
-                                }
-                                i++;
-                            }
-                            printf("Checked %d Bytes\n",bytesChecked);
+                            printf("Error opening to read\n");
                         }
-                        printf("Check Done\n");
+                        else
+                        {
 
+                            bytesToCheck=flash_cmd_image_size();
+                            rValue=fl_getPageSize();
+
+                            while((rValue==fl_getPageSize()) && (bytesChecked < bytesToCheck))
+                            {
+
+                                if(flash_cmd_read_page(fl_buffer,0))
+                                {
+                                    printf("Flash Read Error\n");
+                                }
+                                i=0;
+                                rValue = _read(fd, chk_buffer, fl_getPageSize());
+                                while((i<rValue) && (bytesChecked < bytesToCheck))
+                                {
+                                    if(*(chk_buffer+i) != *(fl_buffer+i))
+                                    {
+                                        flError++;
+                                    }
+                                    i++;
+                                    bytesChecked++;
+                                }
+                                printf("Checked %d Bytes\n",bytesChecked);
+
+                            }
+                            printf("Check Done\n");
+                            printf("%d Errors Found\n",flError);
+                            if(bytesChecked<bytesToCheck)
+                                {
+                                    printf("The file is smaller than image.\n");
+                                }
+
+                        }
                     }
                     free(fl_buffer);
                     free(chk_buffer);
                     _close(fd);
-                }
+                } /* End of if _open */
                 break;
         } /* End of switch statement for menu */
 

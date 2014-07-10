@@ -22,7 +22,7 @@ int flash_cmd_write_page_data(unsigned char []);
  * On return the first word of data is written with 1 if there is nothing to
  * read and 0 otherwise.
  */
-int flash_cmd_read_page(unsigned char []);
+int flash_cmd_read_page(unsigned char [], int);
 /**
  * Get data previously read by flash_cmd_read_page().
  */
@@ -34,5 +34,7 @@ int flash_cmd_deinit(void);
 
 int flash_cmd_select_image(int);
 int flash_cmd_print_select_image_info(void);
+
+int flash_cmd_image_size(void);
 
 #endif /*_flash_interface_h_*/
