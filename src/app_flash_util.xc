@@ -130,8 +130,6 @@ void dataFlashMenu(void)
                 bytesProgrammed=0;
                 flError=0;
                 i=0;
-                /*This inits the image read only by sending a 1 for init */
-
 
                     /* Image can be read from flash */
                     while((bytesProgrammed < bytes) && (flError!=1))

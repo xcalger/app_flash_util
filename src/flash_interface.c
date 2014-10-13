@@ -303,6 +303,9 @@ int flash_cmd_write_page_data(unsigned char *data)
 }
 #endif
 
+#if 0
+
+/* Not used */
 int flash_cmd_write_data_partition(unsigned char *data, int offset, int length)
 {
 
@@ -327,3 +330,4 @@ int flash_cmd_write_data_partition(unsigned char *data, int offset, int length)
     return(0);
 
 }
+#endif
