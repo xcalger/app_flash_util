@@ -200,6 +200,7 @@ int flash_cmd_erase_all(void)
     return 0;
 }
 
+
 /* This section is completely TODO */
 #if 0
 static int begin_write()
@@ -302,4 +303,27 @@ int flash_cmd_write_page_data(unsigned char *data)
 }
 #endif
 
+int flash_cmd_write_data_partition(unsigned char *data, int offset, int length)
+{
 
+    /* Write a portion of the data partition */
+
+    /* Check to see if writing a less than a sector */
+    /* TODO */
+
+
+
+    /* Erase Sector in data flash */
+    if(fl_eraseDataSector(0))
+    {
+        printf("Error Erasing Data Sector\n");
+        return(1);
+    }
+    if(fl_writeDataPage(0, data))
+    {
+        printf("Error programming page\n");
+        return(1);
+    }
+    return(0);
+
+}

@@ -29,7 +29,136 @@ fl_SPIPorts pFlash = {
 fl_DeviceSpec flash_devices[] = {FL_DEVICE_WINBOND_W25X20};
 
 
+void dataFlashMenu(void)
+{
+    unsigned char data[64];
+    int offset,i;
+    int rValue, bytesProgrammed, flError;
+    int bytes,bytes_to_read;
+    int fd = 0;
+    char filename[32];
+    char c,dum;
+    unsigned char *fl_buffer;
+    unsigned char *chk_buffer;
 
+    printf("Data Flash Menu\n");
+    printf("(p)rint data flash info\n");
+    printf("(r)ead and print 64 bytes\n");
+    printf("(f)lash data from file\n");
+    printf("Command:\n");
+
+    /* Look for command. Extra character is coming from console I believe, so take care of that. */
+    scanf("%c%c",&c,&dum);
+
+    switch(c)
+    {
+    case 'P':
+    case 'p':
+        printf("Data Partition Size: %d\n",fl_getDataPartitionSize());
+        printf("Data Partition Sector 0 Size: %d\n", fl_getDataSectorSize(0));
+        printf("Data Partition Page 0 Size: %d\n", fl_getPageSize());
+        break;
+    case 'R':
+    case 'r':
+        printf("Enter Offset:\n");
+        scanf("%d%c",&offset,&dum);
+        if(!fl_readData(offset, 64, data))
+        {
+            for(i=0;i<64;i++)
+            {
+                printf("Data[%d]: %d\n",i, data[i]);
+            }
+        }
+        else
+        {
+            printf("Read Error\n");
+        }
+        break;
+    case 'f':
+    case 'F':
+
+        /* To work properly you must specify --boot-partition-size <size> in the xflash command. Having a data partition specified seems optional */
+        printf("Enter # bytes to write:\n");
+        scanf("%d%c",&bytes,&dum);
+      /* fl_getDataPartitionSize() does not appear to work right
+        if(fl_getDataPartitionSize() < bytes)
+        {
+            printf("Error. Data Partition too small.\n");
+            return;
+        }
+        */
+        printf("Program data flash. Enter Starting Offset:\n");
+        scanf("%d%c",&offset,&dum);
+
+       /*  fl_getDataPartitionSize() does not appear to work right
+        if(fl_getDataPartitionSize() < (bytes+offset))
+        {
+            printf("Error. Data Partition too small.\n");
+            return;
+        }
+        */
+        printf("Enter filename of data:\n");
+        gets(filename);
+        fd = _open(filename, O_RDONLY, 0);
+
+        if (fd == -1) {
+          printstrln("Error: _open failed");
+        }
+        else
+        {
+            /* File opened. Allocate page buffers for flash and file. */
+            if(bytes > fl_getDataSectorSize(0))
+            {
+                fl_buffer = malloc(fl_getDataSectorSize(0));
+                bytes_to_read = fl_getDataSectorSize(0);
+            }
+            else
+            {
+                fl_buffer = malloc(bytes);
+                bytes_to_read = bytes;
+            }
+
+            chk_buffer = malloc(fl_getWriteScratchSize(offset, bytes_to_read));
+            if((fl_buffer == NULL) || (chk_buffer == NULL))
+            {
+                printf("malloc failed\n");
+            }
+            else{
+
+                /* Read a sector or less of data from the file */
+                /* buffers allocated. Begin reading flash a page at a time and check each byte */
+                bytesProgrammed=0;
+                flError=0;
+                i=0;
+                /*This inits the image read only by sending a 1 for init */
+
+
+                    /* Image can be read from flash */
+                    while((bytesProgrammed < bytes) && (flError!=1))
+                    {
+                        rValue = _read(fd, fl_buffer, bytes_to_read);
+                        if(fl_writeData(offset, bytes_to_read, fl_buffer, chk_buffer))
+                        {
+                            /* flash program error */
+                            printf("Programming error\n");
+                            flError = 1;
+                        }
+                        else{
+                            bytesProgrammed+= bytes_to_read;
+                        }
+                    }
+                    printf("Program Done\n");
+                    printf("** %d Errors Found\n",flError);
+
+                free(fl_buffer);
+                free(chk_buffer);
+            } /* End of if buffers can be allocated */
+
+            _close(fd);
+        } /* End of if _open */
+        break;
+    }
+}
 
 int main() {
 
@@ -85,6 +214,7 @@ int main() {
         printf("(a)ll upgrade erase\n");
         printf("(p)rogram next image from file\n");
         printf("(v)alidate selected image from file\n");
+        printf("(i)nfo on dataflash partition\n");
         printf("e(x)it\n");
         printf("Current Image Selected = %d\n\n",imageNum);
 
@@ -189,6 +319,11 @@ int main() {
                     _close(fd);
                 } /* End of if _open */
                 break; /* End of Validate case choice */
+
+            case 'i':
+            case 'I':
+                dataFlashMenu();
+                break;
 
             default:
                 break;
