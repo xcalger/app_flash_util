@@ -1,4 +1,3 @@
-#Mon Jun 30 17:11:52 CDT 2014
 eclipse.preferences.version=1
 environment/project/com.xmos.cdt.toolchain.1366106021/XMOS_MODULE_PATH/delimiter=\:
 environment/project/com.xmos.cdt.toolchain.1366106021/XMOS_MODULE_PATH/operation=append
@@ -17,7 +16,7 @@ environment/project/com.xmos.cdt.toolchain.1633506018/append=true
 environment/project/com.xmos.cdt.toolchain.1633506018/appendContributed=true
 environment/project/com.xmos.cdt.toolchain.1830980035/XMOS_MODULE_PATH/delimiter=\:
 environment/project/com.xmos.cdt.toolchain.1830980035/XMOS_MODULE_PATH/operation=append
-environment/project/com.xmos.cdt.toolchain.1830980035/XMOS_MODULE_PATH/value=/Users/chrisalger/.xmos/repos/sw_startkit_examples/app_spinning_bar
+environment/project/com.xmos.cdt.toolchain.1830980035/XMOS_MODULE_PATH/value=
 environment/project/com.xmos.cdt.toolchain.1830980035/append=true
 environment/project/com.xmos.cdt.toolchain.1830980035/appendContributed=true
 environment/project/com.xmos.cdt.toolchain.18312953/XMOS_MODULE_PATH/delimiter=\:
@@ -25,8 +24,11 @@ environment/project/com.xmos.cdt.toolchain.18312953/XMOS_MODULE_PATH/operation=a
 environment/project/com.xmos.cdt.toolchain.18312953/XMOS_MODULE_PATH/value=/Users/chrisalger/.xmos/repos/sw_startkit_examples/app_spinning_bar
 environment/project/com.xmos.cdt.toolchain.18312953/append=true
 environment/project/com.xmos.cdt.toolchain.18312953/appendContributed=true
+environment/project/com.xmos.cdt.toolchain.1902273359/XDE_BUILD/delimiter=\:
+environment/project/com.xmos.cdt.toolchain.1902273359/XDE_BUILD/operation=append
+environment/project/com.xmos.cdt.toolchain.1902273359/XDE_BUILD/value=true
 environment/project/com.xmos.cdt.toolchain.1902273359/XMOS_MODULE_PATH/delimiter=\:
 environment/project/com.xmos.cdt.toolchain.1902273359/XMOS_MODULE_PATH/operation=append
-environment/project/com.xmos.cdt.toolchain.1902273359/XMOS_MODULE_PATH/value=/Users/chrisalger/.xmos/repos/sw_startkit_examples/app_spinning_bar
+environment/project/com.xmos.cdt.toolchain.1902273359/XMOS_MODULE_PATH/value=
 environment/project/com.xmos.cdt.toolchain.1902273359/append=true
 environment/project/com.xmos.cdt.toolchain.1902273359/appendContributed=true
