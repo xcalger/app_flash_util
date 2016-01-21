@@ -7,7 +7,6 @@
 
 #include <xs1.h>
 #include <platform.h>
-#include <flash.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <syscall.h>
@@ -15,7 +14,23 @@
 #include "SpecMacros.h"
 #include "flash_interface.h"
 
+#ifdef QUAD_SPI_FLASH
+#include <quadflash.h>
+#include <quadflashlib.h>
+#else
+#include <flash.h>
+#include <flashlib.h>
+#endif
 
+#ifdef QUAD_SPI_FLASH
+fl_QSPIPorts pFlash =
+{
+    XS1_PORT_1B,
+    XS1_PORT_1C,
+    XS1_PORT_4B,
+    XS1_CLKBLK_5
+};
+#else
 fl_SPIPorts pFlash = {
         PORT_SPI_MISO,
         PORT_SPI_SS,
@@ -23,11 +38,7 @@ fl_SPIPorts pFlash = {
         PORT_SPI_MOSI,
         XS1_CLKBLK_1
 };
-
-
-
-fl_DeviceSpec flash_devices[] = {FL_DEVICE_WINBOND_W25X20};
-
+#endif
 
 void dataFlashMenu(void)
 {
@@ -171,13 +182,11 @@ int main() {
 
 
 
-
-
-
     printf("Starting Application\n");
     /* Open a connection to the SPI flash */
 
-    rValue = fl_connectToDevice(pFlash, flash_devices, 1);
+    //rValue = fl_connectToDevice(pFlash, flash_devices, 1);
+    rValue = fl_connect(pFlash);
     if(rValue)
     {
         printf("Error - Connecting to device\n");
