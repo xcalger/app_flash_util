@@ -4,7 +4,7 @@
 
 QSPI_FLASH=1
 
-ifdef QSPI_FLASH
+ifeq ($(QSPI_FLASH),1)
 FLASH_ARGS = -lquadflash -DQUAD_SPI_FLASH=1
 TARGET = xk-audio-216-mc.xn
 else
