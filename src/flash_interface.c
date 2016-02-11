@@ -1,7 +1,13 @@
 #include <xs1.h>
-#include <flash.h>
+
 #include "flash_interface.h"
+#ifdef QUAD_SPI_FLASH
+#include <quadflash.h>
+#include <quadflashlib.h>
+#else
+#include <flash.h>
 #include <flashlib.h>
+#endif
 #include <string.h>
 #include <xclib.h>
 #include <stdio.h>
@@ -23,7 +29,6 @@ static int image_selected = 0;
 static int upgrade_image_valid = 0;
 static int current_flash_subpage_index = 0;
 static unsigned char current_flash_page_data[256];
-
 
 
 /* Find flash images and print out the information */
